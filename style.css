@@ -1,0 +1,14 @@
+body{
+  font-family: 'Special Elite', cursive;
+  background: #E2E8DD;
+}
+.header_div{
+  background: #95A3A4;
+  color: white; 
+}
+.header_div p{
+    font-family: 'Roboto', sans-serif;
+    letter-spacing: 2px;
+    font-size: 25px;
+    font-weight: bold;
+  }
