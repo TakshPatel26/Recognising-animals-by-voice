@@ -1,32 +1,85 @@
-<html>
-  <head>
-    <title>Sound Identification Web App</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
-    <script src="https://unpkg.com/ml5@0.4.3/dist/ml5.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="style.css">
-  </head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Animal Sound Identifier — YAMNet AI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+  <!-- TensorFlow.js — runs Google's YAMNet model (trained on millions of AudioSet samples) -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
 <body>
-    <div class="col-xs-12 header_div text-center">
-      <h2>Sound Identification of Animals</h2>     
-      <p>Note: Play different sounds like barking,meowing</p>     
-    </div>
-    <div class="main_div">
-      <center>
-      <br>
-      <button class="btn btn-info" onclick="startClassification()">Start</button>
-      <h4 id="result_count"></h4>
-      <h3 id="result_label">I can hear - </h3>
-        <br>
-        <img id="animal_image" src="listen.gif" width="300" height="300">
-      </center>
-      </div>
-      <div class="copy_right_footer">
-        Developed by - Taksh Patel
-      </div>
-<script src="main.js"></script>
-  </body>
 
+  <header class="header_div">
+    <div class="header-inner">
+      <h1>🐾 Animal Sound Identifier</h1>
+      <p>Powered by <strong>Google YAMNet</strong> — a deep neural network trained on millions of
+         AudioSet recordings (521 sound classes)</p>
+      <div class="badge-row">
+        <span class="badge">🧠 TensorFlow.js</span>
+        <span class="badge">🎙️ Real-time audio</span>
+        <span class="badge">🐶🐱🦁 10 animals</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="main_div">
+
+    <!-- ==================== LEFT: main detector ==================== -->
+    <section class="card">
+      <button id="start_btn" class="btn-start" onclick="startClassification()">
+        <span class="btn-icon">🎤</span> Start Listening
+      </button>
+      <p id="status_text" class="status">Press the button and allow microphone access</p>
+
+      <!-- microphone level meter -->
+      <div class="mic-meter" title="Microphone level">
+        <span class="mic-icon">🎚️</span>
+        <div class="mic-track"><div id="mic_level" class="mic-fill"></div></div>
+      </div>
+
+      <div class="result-area">
+        <div id="display_stage" class="display-stage">
+          <img id="animal_image" src="listen.gif" alt="listening" width="240" height="240">
+          <div id="animal_emoji" class="animal-emoji hidden">🐾</div>
+        </div>
+        <h2 id="result_label">I can hear — nothing yet</h2>
+        <div class="confidence-wrap">
+          <div class="confidence-track">
+            <div id="confidence_bar" class="confidence-fill"></div>
+          </div>
+          <span id="confidence_text">0%</span>
+        </div>
+      </div>
+
+      <h3 class="section-title">Animals I can recognize</h3>
+      <div id="animal_chips" class="chips"><!-- filled by main.js --></div>
+    </section>
+
+    <!-- ==================== RIGHT: analytics ==================== -->
+    <section class="card side-card">
+      <h3>What YAMNet hears (top 5 of 521 classes)</h3>
+      <div id="live_bars" class="live-bars">
+        <p class="muted">Start listening to see live predictions…</p>
+      </div>
+
+      <h3>Detections</h3>
+      <div id="counters" class="counters-grid"><!-- filled by main.js --></div>
+
+      <h3>Detection Log</h3>
+      <ul id="detection_log" class="log">
+        <li class="muted">No detections yet</li>
+      </ul>
+    </section>
+
+  </main>
+
+  <footer class="copy_right_footer">
+    Developed by — Taksh Patel · Detection engine: Google YAMNet (AudioSet)
+  </footer>
+
+  <script src="main.js"></script>
+</body>
 </html>
