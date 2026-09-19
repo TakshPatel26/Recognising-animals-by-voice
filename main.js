@@ -18,8 +18,14 @@
    ================================================================== */
 
 // ------------------------------ CONFIG -----------------------------
-const YAMNET_MODEL_URL =
-  'https://storage.googleapis.com/tfhub-tfjs-modules/google/tfjs-model/yamnet/tfjs/1/model.json';
+/* Model sources, tried in order. The tfhub.dev URL is the official one
+   (it redirects to Kaggle Models storage since the TF Hub migration). */
+const MODEL_SOURCES = [
+  { url: 'https://tfhub.dev/google/tfjs-model/yamnet/tfjs/1',
+    options: { fromTFHub: true } },
+  { url: 'https://www.kaggle.com/models/google/yamnet/TfJs/tfjs/1',
+    options: { fromTFHub: true } }
+];
 
 const SAMPLE_RATE          = 16000;   // YAMNet expects 16 kHz mono
 const INPUT_SAMPLES        = 15600;   // 0.975 s window
@@ -120,6 +126,24 @@ Object.keys(ANIMALS).forEach(k => { counts[k] = 0; });
   });
 })();
 
+// --------------------------- MODEL LOADER --------------------------
+async function loadYamnet() {
+  let lastErr = null;
+  for (const src of MODEL_SOURCES) {
+    try {
+      const m = await tf.loadGraphModel(src.url, src.options);
+      // Warm-up run so the first real prediction is fast
+      tf.tidy(() => { m.predict(tf.zeros([INPUT_SAMPLES])); });
+      console.log('YAMNet loaded from: ' + src.url);
+      return m;
+    } catch (err) {
+      console.warn('Failed to load YAMNet from ' + src.url, err);
+      lastErr = err;
+    }
+  }
+  throw lastErr || new Error('All model sources failed');
+}
+
 // ------------------------------ START ------------------------------
 async function startClassification() {
   if (started) return;
@@ -128,7 +152,7 @@ async function startClassification() {
 
   try {
     setStatus('Loading Google YAMNet model (~4 MB)…');
-    model = await tf.loadGraphModel(YAMNET_MODEL_URL);
+    model = await loadYamnet();
 
     setStatus('Requesting microphone…');
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -161,7 +185,8 @@ async function startClassification() {
     if (err.name === 'NotAllowedError' || err.name === 'SecurityError') {
       setStatus('❌ Microphone access denied. Please allow the mic and reload.');
     } else {
-      setStatus('❌ Could not load YAMNet. Check your internet connection and reload.');
+      setStatus('❌ Could not load YAMNet (' + (err.message || err) +
+                '). Check your internet connection / ad-blocker and reload.');
     }
   }
 }
@@ -198,7 +223,13 @@ async function runInference() {
   try {
     const scores = tf.tidy(() => {
       const waveform = tf.tensor1d(ringBuffer);
-      const [s] = model.predict(waveform);      // [frames, 521]
+      let out = model.predict(waveform);         // [scores, embeddings, spectrogram]
+      if (!Array.isArray(out)) out = [out];
+      // Pick the output whose last dimension is 521 (the class scores)
+      let s = out[0];
+      for (const t of out) {
+        if (t.shape[t.shape.length - 1] === 521) { s = t; break; }
+      }
       return s.mean(0);                          // average over frames -> [521]
     });
     const scoreArr = await scores.data();
